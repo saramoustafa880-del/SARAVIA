@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light" style=""><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sara VIA - Enterprise Architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&amp;family=Inter:wght@300;400;600;700;900&amp;display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#1a1a2e',
+          primaryTextColor: '#ffffff',
+          primaryBorderColor: '#C9A227',
+          lineColor: '#C9A227',
+          secondaryColor: '#0d0d1a',
+          tertiaryColor: '#1a1a2e',
+          background: '#0a0a0f',
+          mainBkg: '#1a1a2e',
+          nodeBorder: '#C9A227',
+          clusterBkg: 'rgba(255,215,0,0.05)',
+          titleColor: '#ffd700',
+          edgeLabelBackground: '#0a0a0f',
+          fontFamily: 'Inter, sans-serif',
+        },
+      });
+    </script>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script>
+      if (window.Pi && typeof window.Pi.init === 'function') {
+        window.Pi.init({ version: '2.0', sandbox: false });
+      }
+    </script>
+    <style>
+      :root {
+        --bg-dark: #0a0a0f;
+        --bg-card: rgba(255, 255, 255, 0.03);
+        --gold-primary: #ffd700;
+        --gold-secondary: #c9a227;
+        --text-main: #ffffff;
+        --text-muted: #8b9bb4;
+        --accent-glow: rgba(255, 215, 0, 0.15);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: var(--bg-dark);
+        background-image:
+          radial-gradient(circle at 50% 0%, #1a1a2e 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(201, 162, 39, 0.05) 0%, transparent 30%);
+        color: var(--text-main);
+        font-family: 'Inter', sans-serif;
+        overflow-x: hidden;
+        line-height: 1.6;
+      }
+
+      .arabic {
+        font-family: 'Cairo', sans-serif;
+      }
+
+      /* Typography & Gradients */
+      .gold-text {
+        background: linear-gradient(135deg, #fff5c3 0%, #ffd700 50%, #c9a227 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      /* Layout Containers */
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      /* Hero Section */
+      .hero {
+        min-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        position: relative;
+        padding: 160px 0 100px; /* Added padding-top to avoid navbar overlap */
+      }
+
+      .hero::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffd700' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.3;
+        z-index: -1;
+      }
+
+      .hero h1 {
+        font-size: 4.5rem;
+        margin-bottom: 1rem;
+        line-height: 1.1;
+      }
+
+      .hero .subtitle {
+        font-size: 1.8rem;
+        color: var(--text-muted);
+        font-weight: 300;
+        margin-bottom: 3rem;
+      }
+
+      .badge {
+        border: 1px solid var(--gold-primary);
+        color: var(--gold-primary);
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 20px;
+        display: inline-block;
+        backdrop-filter: blur(5px);
+      }
+
+      /* Stats Bar */
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 80px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 40px 0;
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #fff;
+        display: block;
+      }
+
+      .stat-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* Cards & Glassmorphism */
+      .glass-card {
+        background: var(--bg-card);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 30px;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .glass-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(255, 215, 0, 0.3);
+        box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+      }
+
+      .glass-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--gold-primary), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .glass-card:hover::before {
+        opacity: 1;
+      }
+
+      /* Grid Layouts */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+      }
+
+      .section-title {
+        text-align: center;
+        margin: 80px 0 40px;
+        position: relative;
+      }
+
+      .section-title h2 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      /* Diagram Section */
+      .diagram-container {
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 16px;
+        padding: 40px;
+        border: 1px solid rgba(255, 215, 0, 0.1);
+        margin: 40px 0;
+        overflow: hidden;
+      }
+
+      /* Code Blocks */
+      pre {
+        background: #0f0f13 !important;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow-x: auto;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.9rem;
+        color: #d4d4d4;
+      }
+
+      .code-header {
+        display: flex;
+        justify-content: space-between;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 10px 20px;
+        border-radius: 8px 8px 0 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: none;
+        font-size: 0.8rem;
+        color: var(--gold-primary);
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+      }
+
+      .code-wrapper {
+        margin-bottom: 30px;
+      }
+
+      .code-wrapper pre {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+      }
+
+      /* Custom Syntax Highlighting (Simulated) */
+      .keyword {
+        color: #569cd6;
+      }
+      .string {
+        color: #ce9178;
+      }
+      .class-name {
+        color: #4ec9b0;
+      }
+      .function {
+        color: #dcdcaa;
+      }
+      .comment {
+        color: #6a9955;
+        font-style: italic;
+      }
+      .number {
+        color: #b5cea8;
+      }
+
+      /* Animations */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .animate-up {
+        animation: fadeInUp 0.8s ease-out forwards;
+      }
+
+      .delay-1 {
+        animation-delay: 0.2s;
+      }
+      .delay-2 {
+        animation-delay: 0.4s;
+      }
+      .delay-3 {
+        animation-delay: 0.6s;
+      }
+
+      /* Responsive */
+      @media (max-width: 900px) {
+        .hero h1 {
+          font-size: 3rem;
+        }
+        .grid-2,
+        .grid-3,
+        .stats-grid {
+          grid-template-columns: 1fr;
+        }
+        .stats-grid {
+          gap: 40px;
+        }
+      }
+
+      /* Mermaid Overrides */
+      .mermaid {
+        background: transparent;
+      }
+
+      /* ── Pi Payment Navbar ── */
+      .pi-navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background: rgba(10, 10, 15, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+        padding: 12px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+      }
+
+      .pi-navbar .brand {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        background: linear-gradient(135deg, #fff5c3 0%, #ffd700 50%, #c9a227 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .pi-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .pi-avatar {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #ffd700, #c9a227);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #0a0a0f;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+
+      .pi-user-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+
+      .pi-username {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #ffd700;
+      }
+
+      .pi-status {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .pi-pay-btn {
+        background: linear-gradient(135deg, #ffd700 0%, #c9a227 100%);
+        color: #0a0a0f;
+        border: none;
+        padding: 10px 22px;
+        font-size: 0.9rem;
+        font-weight: 800;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 18px rgba(255, 215, 0, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.3px;
+      }
+
+      .pi-pay-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 28px rgba(255, 215, 0, 0.4);
+        background: linear-gradient(135deg, #ffe44d 0%, #ffd700 100%);
+      }
+
+      .pi-pay-btn:active {
+        transform: translateY(0);
+      }
+
+      .pi-pay-btn .pi-symbol {
+        font-size: 1rem;
+        font-weight: 900;
+      }
+
+      /* Toast notification */
+      .pi-toast {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: rgba(10, 10, 15, 0.95);
+        border: 1px solid rgba(255, 215, 0, 0.4);
+        border-radius: 12px;
+        padding: 14px 22px;
+        font-size: 0.85rem;
+        color: #fff;
+        z-index: 2000;
+        display: none;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        font-family: 'Inter', sans-serif;
+        max-width: 300px;
+        backdrop-filter: blur(10px);
+        transition: opacity 0.3s ease;
+      }
+
+      .pi-toast.show {
+        display: block;
+        animation: fadeInUp 0.4s ease-out forwards;
+      }
+
+      .pi-toast .toast-icon {
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body style="">
+    <!-- Pi Payment Navbar -->
+    <nav class="pi-navbar">
+      <div class="brand">π SARA VIA</div>
+      <div class="pi-user-info">
+        <div class="pi-avatar" id="piUserAvatar">π</div>
+        <div class="pi-user-text">
+          <div class="pi-username" id="piUsernameDisplay">Guest</div>
+          <div class="pi-status" id="piStatusDisplay">فشل التحقق</div>
+        </div>
+      </div>
+      <button class="pi-pay-btn" id="piPayBtn">
+        <span class="pi-symbol">π</span>
+        <span>Support 1 Pi</span>
+      </button>
+    </nav>
+
+    <!-- Pi Toast Notification -->
+    <div class="pi-toast" id="piToast"><span class="toast-icon">🔔</span><span id="piToastMsg">❌ فشل تسجيل الدخول: Pi Network SDK was not initialized. Call init() before any other method.</span></div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+      <div class="container animate-up">
+        <div class="badge">Enterprise Architecture v2.0</div>
+        <h1 class="gold-text">SARA VIA<br>GLOBAL ECOSYSTEM</h1>
+        <p class="subtitle arabic">بناء المستقبل الرقمي - Building the Digital Future</p>
+        <p style="max-width: 600px; color: #8b9bb4; margin: 0 auto">
+          A sovereign technological infrastructure powered by Autonomous AI and Blockchain, designed for the next
+          generation of global travel.
+        </p>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="container">
+      <div class="stats-grid animate-up delay-1">
+        <div class="stat-item">
+          <span class="stat-value gold-text">50M+</span>
+          <span class="stat-label">Target Pioneers</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value gold-text">99.99%</span>
+          <span class="stat-label">Global Uptime SLA</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value gold-text">4</span>
+          <span class="stat-label">Strategic Regions</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value gold-text">GPT-4o</span>
+          <span class="stat-label">Cognitive Core</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Architecture Diagram -->
+    <div class="container">
+      <div class="section-title animate-up delay-2">
+        <h2 class="gold-text">System Architecture Diagram</h2>
+        <p class="arabic" style="color: var(--text-muted)">المخطط الهيكلي للنظام المتكامل</p>
+      </div>
+
+      <div class="diagram-container glass-card animate-up delay-2">
+        <div class="mermaid" id="saraViaDiagram" data-processed="true"><svg id="mermaid-1774165944202" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 16px;" viewBox="-8 -8 16 16" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#mermaid-1774165944202{font-family:Inter,sans-serif;font-size:16px;fill:#ffffff;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#mermaid-1774165944202 .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#mermaid-1774165944202 .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#mermaid-1774165944202 .error-icon{fill:#1a1a2e;}#mermaid-1774165944202 .error-text{fill:#e5e5d1;stroke:#e5e5d1;}#mermaid-1774165944202 .edge-thickness-normal{stroke-width:1px;}#mermaid-1774165944202 .edge-thickness-thick{stroke-width:3.5px;}#mermaid-1774165944202 .edge-pattern-solid{stroke-dasharray:0;}#mermaid-1774165944202 .edge-thickness-invisible{stroke-width:0;fill:none;}#mermaid-1774165944202 .edge-pattern-dashed{stroke-dasharray:3;}#mermaid-1774165944202 .edge-pattern-dotted{stroke-dasharray:2;}#mermaid-1774165944202 .marker{fill:#C9A227;stroke:#C9A227;}#mermaid-1774165944202 .marker.cross{stroke:#C9A227;}#mermaid-1774165944202 svg{font-family:Inter,sans-serif;font-size:16px;}#mermaid-1774165944202 p{margin:0;}#mermaid-1774165944202 .label{font-family:Inter,sans-serif;color:#ffffff;}#mermaid-1774165944202 .cluster-label text{fill:#ffd700;}#mermaid-1774165944202 .cluster-label span{color:#ffd700;}#mermaid-1774165944202 .cluster-label span p{background-color:transparent;}#mermaid-1774165944202 .label text,#mermaid-1774165944202 span{fill:#ffffff;color:#ffffff;}#mermaid-1774165944202 .node rect,#mermaid-1774165944202 .node circle,#mermaid-1774165944202 .node ellipse,#mermaid-1774165944202 .node polygon,#mermaid-1774165944202 .node path{fill:#1a1a2e;stroke:#C9A227;stroke-width:1px;}#mermaid-1774165944202 .rough-node .label text,#mermaid-1774165944202 .node .label text,#mermaid-1774165944202 .image-shape .label,#mermaid-1774165944202 .icon-shape .label{text-anchor:middle;}#mermaid-1774165944202 .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#mermaid-1774165944202 .rough-node .label,#mermaid-1774165944202 .node .label,#mermaid-1774165944202 .image-shape .label,#mermaid-1774165944202 .icon-shape .label{text-align:center;}#mermaid-1774165944202 .node.clickable{cursor:pointer;}#mermaid-1774165944202 .root .anchor path{fill:#C9A227!important;stroke-width:0;stroke:#C9A227;}#mermaid-1774165944202 .arrowheadPath{fill:#f5f5f0;}#mermaid-1774165944202 .edgePath .path{stroke:#C9A227;stroke-width:2.0px;}#mermaid-1774165944202 .flowchart-link{stroke:#C9A227;fill:none;}#mermaid-1774165944202 .edgeLabel{background-color:#0a0a0f;text-align:center;}#mermaid-1774165944202 .edgeLabel p{background-color:#0a0a0f;}#mermaid-1774165944202 .edgeLabel rect{opacity:0.5;background-color:#0a0a0f;fill:#0a0a0f;}#mermaid-1774165944202 .labelBkg{background-color:rgba(10, 10, 15, 0.5);}#mermaid-1774165944202 .cluster rect{fill:rgba(255,215,0,0.05);stroke:hsl(240, 0%, 4.1176470588%);stroke-width:1px;}#mermaid-1774165944202 .cluster text{fill:#ffd700;}#mermaid-1774165944202 .cluster span{color:#ffd700;}#mermaid-1774165944202 div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:Inter,sans-serif;font-size:12px;background:#1a1a2e;border:1px solid hsl(240, 0%, 4.1176470588%);border-radius:2px;pointer-events:none;z-index:100;}#mermaid-1774165944202 .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#ffffff;}#mermaid-1774165944202 rect.text{fill:none;stroke-width:0;}#mermaid-1774165944202 .icon-shape,#mermaid-1774165944202 .image-shape{background-color:#0a0a0f;text-align:center;}#mermaid-1774165944202 .icon-shape p,#mermaid-1774165944202 .image-shape p{background-color:#0a0a0f;padding:2px;}#mermaid-1774165944202 .icon-shape .label rect,#mermaid-1774165944202 .image-shape .label rect{opacity:0.5;background-color:#0a0a0f;fill:#0a0a0f;}#mermaid-1774165944202 .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#mermaid-1774165944202 .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#mermaid-1774165944202 :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}#mermaid-1774165944202 .gold&gt;*{fill:#C9A227!important;stroke:#FFD700!important;color:#000!important;font-weight:bold!important;}#mermaid-1774165944202 .gold span{fill:#C9A227!important;stroke:#FFD700!important;color:#000!important;font-weight:bold!important;}#mermaid-1774165944202 .gold tspan{fill:#000!important;}#mermaid-1774165944202 .dark&gt;*{fill:#1a1a2e!important;stroke:#C9A227!important;color:#fff!important;}#mermaid-1774165944202 .dark span{fill:#1a1a2e!important;stroke:#C9A227!important;color:#fff!important;}#mermaid-1774165944202 .dark tspan{fill:#fff!important;}#mermaid-1774165944202 .data&gt;*{fill:#0d1117!important;stroke:#4ec9b0!important;color:#4ec9b0!important;}#mermaid-1774165944202 .data span{fill:#0d1117!important;stroke:#4ec9b0!important;color:#4ec9b0!important;}#mermaid-1774165944202 .data tspan{fill:#4ec9b0!important;}</style><g><marker id="mermaid-1774165944202_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></path></marker><marker id="mermaid-1774165944202_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></path></marker><marker id="mermaid-1774165944202_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></circle></marker><marker id="mermaid-1774165944202_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"></circle></marker><marker id="mermaid-1774165944202_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"></path></marker><marker id="mermaid-1774165944202_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"></path></marker><g class="root"><g class="clusters"><g class="cluster" id="DL" data-look="classic"><rect style="" x="168" y="433" width="210" height="50"></rect><g class="cluster-label" transform="translate(273, 433)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>Data Layer</p></span></div></foreignObject></g></g><g class="cluster" id="FC" data-look="classic"><rect style="" x="8" y="283" width="140" height="100"></rect><g class="cluster-label" transform="translate(78, 283)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>Pi Bank Financial Core</p></span></div></foreignObject></g></g><g class="cluster" id="BL" data-look="classic"><rect style="" x="168" y="283" width="210" height="100"></rect><g class="cluster-label" transform="translate(273, 283)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>Microservices Mesh</p></span></div></foreignObject></g></g><g class="cluster" id="IL" data-look="classic"><rect style="" x="398" y="208" width="127.5" height="175"></rect><g class="cluster-label" transform="translate(461.75, 208)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>Intelligence Layer</p></span></div></foreignObject></g></g><g class="cluster" id="SL" data-look="classic"><rect style="" x="413" y="58" width="75" height="100"></rect><g class="cluster-label" transform="translate(450.5, 58)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>Zero Trust Shield</p></span></div></foreignObject></g></g></g><g class="edgePaths"><path d="M453,83L453,87.167C453,91.333,453,99.667,453,107.333C453,115,453,122,453,125.5L453,129" id="L_CF_AG_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_CF_AG_0" data-points="W3sieCI6NDUzLCJ5Ijo4M30seyJ4Ijo0NTMsInkiOjEwOH0seyJ4Ijo0NTMsInkiOjEzM31d" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M453,133L453,137.167C453,141.333,453,149.667,453,158C453,166.333,453,174.667,453,183C453,191.333,453,199.667,453,207.333C453,215,453,222,453,225.5L453,229" id="L_AG_Orch_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_AG_Orch_0" data-points="W3sieCI6NDUzLCJ5IjoxMzN9LHsieCI6NDUzLCJ5IjoxNTh9LHsieCI6NDUzLCJ5IjoxODN9LHsieCI6NDUzLCJ5IjoyMDh9LHsieCI6NDUzLCJ5IjoyMzN9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M453,233L450.5,237.167C448,241.333,443,249.667,440.5,258C438,266.333,438,274.667,438,283C438,291.333,438,299.667,438,308C438,316.333,438,324.667,406.161,332.915C374.323,341.164,310.645,349.328,278.806,353.409L246.968,357.491" id="L_Orch_Auth_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Orch_Auth_0" data-points="W3sieCI6NDUzLCJ5IjoyMzN9LHsieCI6NDM4LCJ5IjoyNTh9LHsieCI6NDM4LCJ5IjoyODN9LHsieCI6NDM4LCJ5IjozMDh9LHsieCI6NDM4LCJ5IjozMzN9LHsieCI6MjQzLCJ5IjozNTh9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M453,233L447.167,237.167C441.333,241.333,429.667,249.667,423.833,258C418,266.333,418,274.667,390.743,282.902C363.485,291.137,308.971,299.273,281.713,303.341L254.456,307.41" id="L_Orch_Booking_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Orch_Booking_0" data-points="W3sieCI6NDUzLCJ5IjoyMzN9LHsieCI6NDE4LCJ5IjoyNTh9LHsieCI6NDE4LCJ5IjoyODN9LHsieCI6MjUwLjUsInkiOjMwOH1d" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M453,233L458.833,237.167C464.667,241.333,476.333,249.667,482.167,258C488,266.333,488,274.667,488,282.333C488,290,488,297,488,300.5L488,304" id="L_Orch_AIBrain_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Orch_AIBrain_0" data-points="W3sieCI6NDUzLCJ5IjoyMzN9LHsieCI6NDg4LCJ5IjoyNTh9LHsieCI6NDg4LCJ5IjoyODN9LHsieCI6NDg4LCJ5IjozMDh9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M488,308L489.667,312.167C491.333,316.333,494.667,324.667,495.275,332.361C495.883,340.056,493.766,347.112,492.708,350.641L491.649,354.169" id="L_AIBrain_VectorDB_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_AIBrain_VectorDB_0" data-points="W3sieCI6NDg4LCJ5IjozMDh9LHsieCI6NDk4LCJ5IjozMzN9LHsieCI6NDkwLjUsInkiOjM1OH1d" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M490.5,358L488.417,353.833C486.333,349.667,482.167,341.333,481.502,333.619C480.838,325.905,483.676,318.809,485.095,315.262L486.514,311.714" id="L_VectorDB_AIBrain_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_VectorDB_AIBrain_0" data-points="W3sieCI6NDkwLjUsInkiOjM1OH0seyJ4Ijo0NzgsInkiOjMzM30seyJ4Ijo0ODgsInkiOjMwOH1d" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M488,308L483,312.167C478,316.333,468,324.667,436.159,332.9C404.318,341.134,350.637,349.267,323.796,353.334L296.955,357.401" id="L_AIBrain_Inventory_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_AIBrain_Inventory_0" data-points="W3sieCI6NDg4LCJ5IjozMDh9LHsieCI6NDU4LCJ5IjozMzN9LHsieCI6MjkzLCJ5IjozNTh9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M250.5,308L257.583,312.167C264.667,316.333,278.833,324.667,285.917,332.333C293,340,293,347,293,350.5L293,354" id="L_Booking_Inventory_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Booking_Inventory_0" data-points="W3sieCI6MjUwLjUsInkiOjMwOH0seyJ4IjoyOTMsInkiOjMzM30seyJ4IjoyOTMsInkiOjM1OH1d" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M250.5,308L265.917,312.167C281.333,316.333,312.167,324.667,327.583,332.333C343,340,343,347,343,350.5L343,354" id="L_Booking_Notify_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Booking_Notify_0" data-points="W3sieCI6MjUwLjUsInkiOjMwOH0seyJ4IjozNDMsInkiOjMzM30seyJ4IjozNDMsInkiOjM1OH1d" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M113,308L113,312.167C113,316.333,113,324.667,113,332.333C113,340,113,347,113,350.5L113,354" id="L_SmartC_Ledger_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_SmartC_Ledger_0" data-points="W3sieCI6MTEzLCJ5IjozMDh9LHsieCI6MTEzLCJ5IjozMzN9LHsieCI6MTEzLCJ5IjozNTh9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M243,358L243,362.167C243,366.333,243,374.667,243,383C243,391.333,243,399.667,243,408C243,416.333,243,424.667,241.581,432.381C240.162,440.095,237.324,447.191,235.905,450.738L234.486,454.286" id="L_Auth_PG_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Auth_PG_0" data-points="W3sieCI6MjQzLCJ5IjozNTh9LHsieCI6MjQzLCJ5IjozODN9LHsieCI6MjQzLCJ5Ijo0MDh9LHsieCI6MjQzLCJ5Ijo0MzN9LHsieCI6MjMzLCJ5Ijo0NTh9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M250.5,308L243.417,312.167C236.333,316.333,222.167,324.667,215.083,333C208,341.333,208,349.667,208,358C208,366.333,208,374.667,208,383C208,391.333,208,399.667,208,408C208,416.333,208,424.667,211.695,432.529C215.391,440.391,222.781,447.781,226.476,451.476L230.172,455.172" id="L_Booking_PG_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Booking_PG_0" data-points="W3sieCI6MjUwLjUsInkiOjMwOH0seyJ4IjoyMDgsInkiOjMzM30seyJ4IjoyMDgsInkiOjM1OH0seyJ4IjoyMDgsInkiOjM4M30seyJ4IjoyMDgsInkiOjQwOH0seyJ4IjoyMDgsInkiOjQzM30seyJ4IjoyMzMsInkiOjQ1OH1d" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M293,358L293,362.167C293,366.333,293,374.667,293,383C293,391.333,293,399.667,293,408C293,416.333,293,424.667,293,432.333C293,440,293,447,293,450.5L293,454" id="L_Inventory_Redis_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Inventory_Redis_0" data-points="W3sieCI6MjkzLCJ5IjozNTh9LHsieCI6MjkzLCJ5IjozODN9LHsieCI6MjkzLCJ5Ijo0MDh9LHsieCI6MjkzLCJ5Ijo0MzN9LHsieCI6MjkzLCJ5Ijo0NTh9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M343,358L343,362.167C343,366.333,343,374.667,343,383C343,391.333,343,399.667,343,408C343,416.333,343,424.667,343,432.333C343,440,343,447,343,450.5L343,454" id="L_Notify_Mongo_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Notify_Mongo_0" data-points="W3sieCI6MzQzLCJ5IjozNTh9LHsieCI6MzQzLCJ5IjozODN9LHsieCI6MzQzLCJ5Ijo0MDh9LHsieCI6MzQzLCJ5Ijo0MzN9LHsieCI6MzQzLCJ5Ijo0NTh9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M453,33L453,54" id="L_CL_CF_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_CL_CF_0" data-points="W3sieCI6NDUzLCJ5IjpudWxsfSx7IngiOjQ1MywieSI6MzN9LHsieCI6NDUzLCJ5Ijo1OH0seyJ4Ijo0NTMsInkiOm51bGx9XQ==" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M250.5,308L240.083,312.167C229.667,316.333,208.833,324.667,174.907,332.887C140.981,341.107,93.961,349.214,70.452,353.267L46.942,357.32" id="L_Booking_FC_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_Booking_FC_0" data-points="W3sieCI6MjUwLjUsInkiOjMwOH0seyJ4IjoxODgsInkiOjMzM30seyJ4Ijo0MywieSI6MzU4fV0=" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path><path d="M43,358L46.889,358C50.778,358,58.556,358,63.417,358C68.278,358,70.222,358,72.167,358C74.111,358,76.056,358,76.056,358C76.056,358,74.111,358,72.167,358C70.222,358,68.278,358,64.083,358C59.889,358,53.444,358,50.222,358L47,358" id="L_FC_PiSDK_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_FC_PiSDK_0" data-points="W3sieCI6NDMsInkiOjM1OH0seyJ4Ijo2Ni4zMzMzMzMzMzMzMzMzMywieSI6MzU4fSx7IngiOjcyLjE2NjY2NjY2NjY2NjY3LCJ5IjozNTh9LHsieCI6NzgsInkiOjM1OH0seyJ4Ijo3Mi4xNjY2NjY2NjY2NjY2NywieSI6MzU4fSx7IngiOjY2LjMzMzMzMzMzMzMzMzMzLCJ5IjozNTh9LHsieCI6NDMsInkiOjM1OH1d" marker-end="url(#mermaid-1774165944202_flowchart-v2-pointEnd)"></path></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_CF_AG_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_AG_Orch_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Orch_Auth_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Orch_Booking_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Orch_AIBrain_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_AIBrain_VectorDB_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_VectorDB_AIBrain_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_AIBrain_Inventory_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Booking_Inventory_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Booking_Notify_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_SmartC_Ledger_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Auth_PG_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Booking_PG_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Inventory_Redis_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Notify_Mongo_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_CL_CF_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_Booking_FC_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_FC_PiSDK_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g></g><g class="nodes"><g class="root" transform="translate(445, 0)"><g class="clusters"><g class="cluster" id="CL" data-look="classic"><rect style="" x="8" y="8" width="75" height="170"></rect><g class="cluster-label" transform="translate(45.5, 8)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>Client Layer</p></span></div></foreignObject></g></g></g><g class="edgePaths"></g><g class="edgeLabels"></g><g class="nodes"><g class="node default dark" id="flowchart-Mobile-0" transform="translate(45.5, 43)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Mobile App - Flutter</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-Web-1" transform="translate(45.5, 93)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Web Portal - React</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-PiBrowser-2" transform="translate(45.5, 143)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Pi Browser - Web3</p></span></div></foreignObject></g></g></g></g><g class="node default dark" id="flowchart-CF-3" transform="translate(453, 83)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Cloudflare CDN and WAF</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-AG-4" transform="translate(453, 133)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>API Gateway / Load Balancer</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-Orch-5" transform="translate(453, 233)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Orchestrator Service</p></span></div></foreignObject></g></g><g class="node default gold" id="flowchart-AIBrain-6" transform="translate(488, 308)"><rect class="basic label-container" style="fill:#C9A227 !important;stroke:#FFD700 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#000 !important;font-weight:bold !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(0, 0, 0) !important; font-weight: bold !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#000 !important;font-weight:bold !important" class="nodeLabel"><p>Sara VIA AI Brain - GPT-4o</p></span></div></foreignObject></g></g><g class="node default" id="flowchart-VectorDB-7" transform="translate(490.5, 358)"><rect class="basic label-container" style="" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel"><p>Pinecone Vector DB</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-Auth-8" transform="translate(243, 358)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Auth Service - OIDC</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-Booking-9" transform="translate(250.5, 308)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Booking Engine</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-Inventory-10" transform="translate(293, 358)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Global Inventory</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-Notify-11" transform="translate(343, 358)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Notifications</p></span></div></foreignObject></g></g><g class="node default gold" id="flowchart-PiSDK-12" transform="translate(43, 358)"><rect class="basic label-container" style="fill:#C9A227 !important;stroke:#FFD700 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#000 !important;font-weight:bold !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(0, 0, 0) !important; font-weight: bold !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#000 !important;font-weight:bold !important" class="nodeLabel"><p>Pi Network SDK</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-SmartC-13" transform="translate(113, 308)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Smart Contracts</p></span></div></foreignObject></g></g><g class="node default dark" id="flowchart-Ledger-14" transform="translate(113, 358)"><rect class="basic label-container" style="fill:#1a1a2e !important;stroke:#C9A227 !important" x="-30" y="-15" width="60" height="30"></rect><g class="label" style="color:#fff !important" transform="translate(0, 0)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(255, 255, 255) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#fff !important" class="nodeLabel"><p>Encrypted Ledger</p></span></div></foreignObject></g></g><g class="node default data" id="flowchart-PG-15" transform="translate(233, 458)"><path d="M0,2.678571428571429 a7.5,2.678571428571429 0,0,0 15,0 a7.5,2.678571428571429 0,0,0 -15,0 l0,17.67857142857143 a7.5,2.678571428571429 0,0,0 15,0 l0,-17.67857142857143" class="basic label-container" style="fill:#0d1117 !important;stroke:#4ec9b0 !important" transform="translate(-7.5, -11.517857142857144)"></path><g class="label" style="color:#4ec9b0 !important" transform="translate(0, 10)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(78, 201, 176) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#4ec9b0 !important" class="nodeLabel"><p>PostgreSQL</p></span></div></foreignObject></g></g><g class="node default data" id="flowchart-Redis-16" transform="translate(293, 458)"><path d="M0,2.678571428571429 a7.5,2.678571428571429 0,0,0 15,0 a7.5,2.678571428571429 0,0,0 -15,0 l0,17.67857142857143 a7.5,2.678571428571429 0,0,0 15,0 l0,-17.67857142857143" class="basic label-container" style="fill:#0d1117 !important;stroke:#4ec9b0 !important" transform="translate(-7.5, -11.517857142857144)"></path><g class="label" style="color:#4ec9b0 !important" transform="translate(0, 10)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(78, 201, 176) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#4ec9b0 !important" class="nodeLabel"><p>Redis Cache</p></span></div></foreignObject></g></g><g class="node default data" id="flowchart-Mongo-17" transform="translate(343, 458)"><path d="M0,2.678571428571429 a7.5,2.678571428571429 0,0,0 15,0 a7.5,2.678571428571429 0,0,0 -15,0 l0,17.67857142857143 a7.5,2.678571428571429 0,0,0 15,0 l0,-17.67857142857143" class="basic label-container" style="fill:#0d1117 !important;stroke:#4ec9b0 !important" transform="translate(-7.5, -11.517857142857144)"></path><g class="label" style="color:#4ec9b0 !important" transform="translate(0, 10)"><rect></rect><foreignObject width="0" height="0"><div style="color: rgb(78, 201, 176) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#4ec9b0 !important" class="nodeLabel"><p>MongoDB</p></span></div></foreignObject></g></g></g></g></g></svg></div>
+      </div>
+      <script>
+        (function() {
+          var diagramCode = [
+            'graph TD',
+            '    subgraph CL[Client Layer]',
+            '        Mobile[Mobile App - Flutter]',
+            '        Web[Web Portal - React]',
+            '        PiBrowser[Pi Browser - Web3]',
+            '    end',
+            '    subgraph SL[Zero Trust Shield]',
+            '        CF[Cloudflare CDN and WAF]',
+            '        AG[API Gateway / Load Balancer]',
+            '    end',
+            '    subgraph IL[Intelligence Layer]',
+            '        Orch[Orchestrator Service]',
+            '        AIBrain[Sara VIA AI Brain - GPT-4o]',
+            '        VectorDB[Pinecone Vector DB]',
+            '    end',
+            '    subgraph BL[Microservices Mesh]',
+            '        Auth[Auth Service - OIDC]',
+            '        Booking[Booking Engine]',
+            '        Inventory[Global Inventory]',
+            '        Notify[Notifications]',
+            '    end',
+            '    subgraph FC[Pi Bank Financial Core]',
+            '        PiSDK[Pi Network SDK]',
+            '        SmartC[Smart Contracts]',
+            '        Ledger[Encrypted Ledger]',
+            '    end',
+            '    subgraph DL[Data Layer]',
+            '        PG[(PostgreSQL)]',
+            '        Redis[(Redis Cache)]',
+            '        Mongo[(MongoDB)]',
+            '    end',
+            '    CL --> CF',
+            '    CF --> AG',
+            '    AG --> Orch',
+            '    Orch --> Auth',
+            '    Orch --> Booking',
+            '    Orch --> AIBrain',
+            '    AIBrain --> VectorDB',
+            '    VectorDB --> AIBrain',
+            '    AIBrain --> Inventory',
+            '    Booking --> FC',
+            '    Booking --> Inventory',
+            '    Booking --> Notify',
+            '    FC --> PiSDK',
+            '    SmartC --> Ledger',
+            '    Auth --> PG',
+            '    Booking --> PG',
+            '    Inventory --> Redis',
+            '    Notify --> Mongo',
+            '    classDef gold fill:#C9A227,stroke:#FFD700,color:#000,font-weight:bold',
+            '    classDef dark fill:#1a1a2e,stroke:#C9A227,color:#fff',
+            '    classDef data fill:#0d1117,stroke:#4ec9b0,color:#4ec9b0',
+            '    class AIBrain,PiSDK gold',
+            '    class Mobile,Web,PiBrowser,CF,AG,Orch,Auth,Booking,Inventory,Notify,SmartC,Ledger dark',
+            '    class PG,Redis,Mongo data'
+          ].join('\n');
+          document.getElementById('saraViaDiagram').textContent = diagramCode;
+          // Render diagram after setting content
+          mermaid.run({ nodes: [document.getElementById('saraViaDiagram')] });
+        })();
+      </script>
+    </div>
+
+    <!-- Enterprise Stack -->
+    <div class="container">
+      <div class="section-title">
+        <h2 class="gold-text">Enterprise Stack</h2>
+        <p class="arabic" style="color: var(--text-muted)">الركائز التقنية للمؤسسة</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="glass-card animate-up delay-1">
+          <h3 class="gold-text arabic" style="margin-bottom: 15px">1. البنية التحتية</h3>
+          <h4 style="color: #fff; margin-bottom: 10px">Architecture Foundation</h4>
+          <p style="color: var(--text-muted); font-size: 0.9rem">
+            Full Microservices architecture deployed on Kubernetes (K8s) clusters. Utilizing Docker containers for
+            consistent environments and Auto-scaling to handle millions of concurrent Pi Pioneers.
+          </p>
+        </div>
+
+        <div class="glass-card animate-up delay-2">
+          <h3 class="gold-text arabic" style="margin-bottom: 15px">2. البنك المالي</h3>
+          <h4 style="color: #fff; margin-bottom: 10px">Financial Core (Pi Bank)</h4>
+          <p style="color: var(--text-muted); font-size: 0.9rem">
+            High-Frequency Payment Engine directly integrated with Pi Network Mainnet. Features an immutable encrypted
+            ledger and Smart Contracts that auto-execute bookings upon payment confirmation.
+          </p>
+        </div>
+
+        <div class="glass-card animate-up delay-3">
+          <h3 class="gold-text arabic" style="margin-bottom: 15px">3. العقل الذكي</h3>
+          <h4 style="color: #fff; margin-bottom: 10px">The AI Brain</h4>
+          <p style="color: var(--text-muted); font-size: 0.9rem">
+            Powered by GPT-4o and Vector Databases. It doesn't just search; it predicts. Analyzes traveler behavior to
+            offer proactive deals before the user even asks.
+          </p>
+        </div>
+
+        <div class="glass-card animate-up delay-1">
+          <h3 class="gold-text arabic" style="margin-bottom: 15px">4. الدرع الأمني</h3>
+          <h4 style="color: #fff; margin-bottom: 10px">Zero Trust Security</h4>
+          <p style="color: var(--text-muted); font-size: 0.9rem">
+            "Never trust, always verify." End-to-End Encryption for all data in transit and at rest. Full GDPR
+            compliance with biometric authentication layers.
+          </p>
+        </div>
+
+        <div class="glass-card animate-up delay-2">
+          <h3 class="gold-text arabic" style="margin-bottom: 15px">5. الهوية البصرية</h3>
+          <h4 style="color: #fff; margin-bottom: 10px">Visual Identity</h4>
+          <p style="color: var(--text-muted); font-size: 0.9rem">
+            A fusion of Royal Black and Digital Gold. The UI uses physics-based animations and frosted glass aesthetics
+            to convey prestige and modern luxury.
+          </p>
+        </div>
+
+        <div class="glass-card animate-up delay-3">
+          <h3 class="gold-text arabic" style="margin-bottom: 15px">6. الانتشار العالمي</h3>
+          <h4 style="color: #fff; margin-bottom: 10px">Global Deployment</h4>
+          <p style="color: var(--text-muted); font-size: 0.9rem">
+            Multi-region active-active deployment ensuring low latency access from anywhere. Specific hubs for US, EU,
+            APAC, and MENA regions.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Core Implementation -->
+    <div class="container" style="margin-top: 80px">
+      <div class="section-title">
+        <h2 class="gold-text">Core Implementation</h2>
+        <p class="arabic" style="color: var(--text-muted)">الأكواد البرمجية الأساسية</p>
+      </div>
+
+      <div class="code-wrapper animate-up">
+        <div class="code-header">
+          <span>Pi Network SDK Integration</span>
+          <span>TypeScript</span>
+        </div>
+        <pre><code><span class="comment">// Pi Network SDK Integration</span>
+<span class="keyword">import</span> { PiNetwork, PiPayment } <span class="keyword">from</span> <span class="string">'@pinetwork-js/sdk'</span>;
+
+<span class="keyword">class</span> <span class="class-name">SaraVIAPaymentEngine</span> {
+  <span class="keyword">private</span> piSDK: PiNetwork;
+  <span class="keyword">private</span> ledger: LedgerManager;
+  
+  <span class="keyword">constructor</span>() {
+    <span class="keyword">this</span>.piSDK = <span class="keyword">new</span> PiNetwork({
+      apiKey: process.env.PI_API_KEY,
+      walletAddress: process.env.PI_WALLET_ADDRESS,
+      network: <span class="string">'mainnet'</span>
+    });
+    <span class="keyword">this</span>.ledger = <span class="keyword">new</span> LedgerManager();
+  }
+
+  <span class="keyword">async</span> <span class="function">processBookingPayment</span>(booking: BookingRequest): <span class="class-name">Promise</span>&lt;PaymentResult&gt; {
+    <span class="keyword">const</span> payment = <span class="keyword">await</span> <span class="keyword">this</span>.piSDK.createPayment({
+      amount: booking.totalAmount,
+      memo: <span class="string">`SARA-VIA-${booking.id}`</span>,
+      metadata: { bookingId: booking.id, userId: booking.userId, service: booking.serviceType }
+    });
+    <span class="keyword">await</span> <span class="keyword">this</span>.ledger.record({
+      transactionId: payment.identifier,
+      amount: booking.totalAmount,
+      timestamp: <span class="keyword">new</span> Date().toISOString(),
+      status: <span class="string">'PENDING'</span>,
+      blockchain: <span class="string">'PI_NETWORK'</span>
+    });
+    <span class="keyword">return</span> <span class="keyword">await</span> <span class="keyword">this</span>.executeSmartContract(payment, booking);
+  }
+
+  <span class="keyword">private</span> <span class="keyword">async</span> <span class="function">executeSmartContract</span>(payment: PiPayment, booking: BookingRequest): <span class="class-name">Promise</span>&lt;PaymentResult&gt; {
+    <span class="keyword">const</span> contract = <span class="keyword">new</span> SmartContract({
+      type: <span class="string">'BOOKING_COMPLETION'</span>,
+      conditions: { paymentConfirmed: <span class="keyword">true</span>, inventoryAvailable: <span class="keyword">true</span>, userVerified: <span class="keyword">true</span> }
+    });
+    <span class="keyword">return</span> <span class="keyword">await</span> contract.execute(payment, booking);
+  }
+}</code></pre>
+      </div>
+
+      <div class="code-wrapper animate-up delay-1">
+        <div class="code-header">
+          <span>Core API &amp; AI Brain</span>
+          <span>TypeScript / Express</span>
+        </div>
+        <pre><code><span class="comment">// Core API - Express.js with Zero Trust</span>
+<span class="keyword">import</span> express <span class="keyword">from</span> <span class="string">'express'</span>;
+<span class="keyword">import</span> { ZeroTrustMiddleware } <span class="keyword">from</span> <span class="string">'./security/ZeroTrust'</span>;
+<span class="keyword">import</span> { AIBrain } <span class="keyword">from</span> <span class="string">'./ai/SaraVIACognitiveBrain'</span>;
+
+<span class="keyword">const</span> app = express();
+app.use(ZeroTrustMiddleware.verifyIdentity);
+app.use(ZeroTrustMiddleware.validateContext);
+app.use(ZeroTrustMiddleware.enforceEncryption);
+
+app.post(<span class="string">'/api/v2/search/intelligent'</span>, <span class="keyword">async</span> (req, res) =&gt; {
+  <span class="keyword">const</span> { userId, query, travelContext } = req.body;
+  <span class="keyword">const</span> aiInsights = <span class="keyword">await</span> AIBrain.analyzeTravelerProfile(userId, {
+    query,
+    context: travelContext,
+    vectorSearch: <span class="keyword">true</span>,  <span class="comment">// Pinecone semantic search</span>
+    predictive: <span class="keyword">true</span>     <span class="comment">// GPT-4o predictions</span>
+  });
+  <span class="keyword">const</span> inventory = <span class="keyword">await</span> GlobalInventoryEngine.fetch({
+    airlines: [<span class="string">'IATA'</span>, <span class="string">'Sabre'</span>, <span class="string">'Amadeus'</span>],
+    hotels: [<span class="string">'Booking.com API'</span>, <span class="string">'Expedia API'</span>, <span class="string">'Hotels.com'</span>],
+    filters: aiInsights.recommendations,
+    priceOptimization: <span class="keyword">true</span>
+  });
+  <span class="keyword">return</span> res.json({
+    results: inventory,
+    aiRecommendations: aiInsights.proactiveOffers,
+    personalizedDeals: aiInsights.predictedPreferences
+  });
+});</code></pre>
+      </div>
+
+      <div class="code-wrapper animate-up delay-2">
+        <div class="code-header">
+          <span>Kubernetes Deployment</span>
+          <span>YAML</span>
+        </div>
+        <pre><code><span class="comment"># Kubernetes Deployment - Global Auto-scaling</span>
+<span class="keyword">apiVersion</span>: apps/v1
+<span class="keyword">kind</span>: Deployment
+<span class="keyword">metadata</span>:
+  <span class="keyword">name</span>: sara-via-api-gateway
+  <span class="keyword">namespace</span>: sara-via-prod
+<span class="keyword">spec</span>:
+  <span class="keyword">replicas</span>: <span class="number">3</span>
+  <span class="keyword">selector</span>:
+    <span class="keyword">matchLabels</span>:
+      <span class="keyword">app</span>: sara-via-api
+  <span class="keyword">template</span>:
+    <span class="keyword">spec</span>:
+      <span class="keyword">containers</span>:
+      - <span class="keyword">name</span>: sara-via-api
+        <span class="keyword">image</span>: saraviaglobal/api-gateway:v2.0.0
+        <span class="keyword">resources</span>:
+          <span class="keyword">requests</span>:
+            <span class="keyword">memory</span>: <span class="string">"512Mi"</span>
+            <span class="keyword">cpu</span>: <span class="string">"500m"</span>
+          <span class="keyword">limits</span>:
+            <span class="keyword">memory</span>: <span class="string">"2Gi"</span>
+            <span class="keyword">cpu</span>: <span class="string">"2000m"</span>
+---
+<span class="keyword">apiVersion</span>: autoscaling/v2
+<span class="keyword">kind</span>: HorizontalPodAutoscaler
+<span class="keyword">metadata</span>:
+  <span class="keyword">name</span>: sara-via-hpa
+<span class="keyword">spec</span>:
+  <span class="keyword">scaleTargetRef</span>:
+    <span class="keyword">apiVersion</span>: apps/v1
+    <span class="keyword">kind</span>: Deployment
+    <span class="keyword">name</span>: sara-via-api-gateway
+  <span class="keyword">minReplicas</span>: <span class="number">3</span>
+  <span class="keyword">maxReplicas</span>: <span class="number">100</span>
+  <span class="keyword">metrics</span>:
+  - <span class="keyword">type</span>: Resource
+    <span class="keyword">resource</span>:
+      <span class="keyword">name</span>: cpu
+      <span class="keyword">target</span>:
+        <span class="keyword">type</span>: Utilization
+        <span class="keyword">averageUtilization</span>: <span class="number">70</span></code></pre>
+      </div>
+    </div>
+
+    <!-- Global Deployment Matrix -->
+    <div class="container" style="margin-bottom: 100px">
+      <div class="section-title">
+        <h2 class="gold-text">Global Deployment Matrix</h2>
+        <p class="arabic" style="color: var(--text-muted)">خطة الانتشار العالمية</p>
+      </div>
+
+      <div class="glass-card">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px">
+          <div style="border-left: 2px solid var(--gold-primary); padding-left: 20px">
+            <h4 style="color: #fff">US-East</h4>
+            <span style="color: var(--text-muted); font-size: 0.8rem">Virginia / Primary Hub</span>
+            <p class="gold-text" style="font-size: 0.8rem; margin-top: 5px">Latency &lt; 20ms</p>
+          </div>
+          <div style="border-left: 2px solid var(--gold-primary); padding-left: 20px">
+            <h4 style="color: #fff">EU-West</h4>
+            <span style="color: var(--text-muted); font-size: 0.8rem">Frankfurt / Euro Hub</span>
+            <p class="gold-text" style="font-size: 0.8rem; margin-top: 5px">Latency &lt; 25ms</p>
+          </div>
+          <div style="border-left: 2px solid var(--gold-primary); padding-left: 20px">
+            <h4 style="color: #fff">Asia-Pacific</h4>
+            <span style="color: var(--text-muted); font-size: 0.8rem">Singapore / APAC Hub</span>
+            <p class="gold-text" style="font-size: 0.8rem; margin-top: 5px">Latency &lt; 30ms</p>
+          </div>
+          <div style="border-left: 2px solid var(--gold-primary); padding-left: 20px">
+            <h4 style="color: #fff">MENA</h4>
+            <span style="color: var(--text-muted); font-size: 0.8rem">UAE / Pioneer Hub</span>
+            <p class="gold-text" style="font-size: 0.8rem; margin-top: 5px">Latency &lt; 15ms</p>
+          </div>
+        </div>
+        <div style="
+            margin-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 20px;
+            text-align: center;
+          ">
+          <p style="color: var(--text-muted)">
+            Content Delivery Network (CDN): <strong style="color: #fff">Cloudflare Global Network</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="
+        text-align: center;
+        padding: 60px 0;
+        border-top: 1px solid rgba(255, 215, 0, 0.1);
+        margin-top: 40px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+      ">
+      <h3 class="gold-text" style="font-size: 1.2rem; margin-bottom: 10px">Sara VIA Global Ecosystem © 2025</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem">Powered by Pi Network · GPT-4o · Kubernetes</p>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      /* Pi Payment Logic */
+      (function () {
+        const userAvatar = document.getElementById('piUserAvatar');
+        const usernameEl = document.getElementById('piUsernameDisplay');
+        const statusEl = document.getElementById('piStatusDisplay');
+        const payBtn = document.getElementById('piPayBtn');
+        const toast = document.getElementById('piToast');
+        const toastMsg = document.getElementById('piToastMsg');
+
+        function showToast(msg, duration) {
+          toastMsg.textContent = msg;
+          toast.classList.add('show');
+          clearTimeout(toast._timer);
+          toast._timer = setTimeout(function () {
+            toast.classList.remove('show');
+          }, duration || 3500);
+        }
+
+        async function postJson(url, body) {
+          const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {}),
+          });
+          const txt = await r.text();
+          return { ok: r.ok, status: r.status, text: txt };
+        }
+
+        async function initPiPayment() {
+          if (!window.Pi) {
+            statusEl.textContent = 'Pi SDK not available';
+            showToast('⚠️ Pi SDK not found. Please open inside Pi Browser.');
+            return;
+          }
+
+          try {
+            statusEl.textContent = 'Authenticating...';
+            const auth = await window.Pi.authenticate(['username', 'payments'], function (incomplete) {
+              console.log('Incomplete payment found', incomplete);
+            });
+
+            const username = auth.user.username;
+            userAvatar.textContent = username.charAt(0).toUpperCase();
+            usernameEl.textContent = username;
+            statusEl.textContent = 'Ready ✓';
+            showToast('✅ مرحباً ' + username + '! جاهز للدفع بـ Pi.');
+
+            payBtn.onclick = async function () {
+              try {
+                statusEl.textContent = 'جارٍ الإنشاء...';
+                showToast('⏳ جارٍ إنشاء الدفعة...');
+
+                const paymentData = {
+                  amount: 1.0,
+                  memo: 'Support Sara VIA - دعم المطور',
+                  metadata: { kind: 'support', platform: 'sara-via' },
+                };
+
+                const callbacks = {
+                  onReadyForServerApproval: function (paymentId) {
+                    statusEl.textContent = 'جارٍ الموافقة...';
+                    showToast('🔄 جارٍ موافقة الخادم...');
+                    postJson('/.netlify/functions/pi-approve', {
+                      paymentId: paymentId,
+                      accessToken: auth.accessToken,
+                    }).then(function (res) {
+                      statusEl.textContent = res.ok ? 'تمت الموافقة ✓' : 'فشل الموافقة';
+                      if (!res.ok) showToast('❌ فشلت موافقة الخادم.');
+                    });
+                  },
+                  onReadyForServerCompletion: function (paymentId, txid) {
+                    statusEl.textContent = 'جارٍ الإتمام...';
+                    showToast('🔄 جارٍ إتمام المعاملة...');
+                    postJson('/.netlify/functions/pi-complete', {
+                      paymentId: paymentId,
+                      txid: txid,
+                      accessToken: auth.accessToken,
+                    }).then(function (res) {
+                      if (res.ok) {
+                        statusEl.textContent = 'تم بنجاح ✓';
+                        showToast('🎉 شكراً لك! تم الدفع بنجاح عبر Pi Network.', 5000);
+                      } else {
+                        statusEl.textContent = 'فشل الإتمام';
+                        showToast('❌ فشل إتمام الدفعة.');
+                      }
+                    });
+                  },
+                  onCancel: function () {
+                    statusEl.textContent = 'ملغاة';
+                    showToast('ℹ️ تم إلغاء الدفعة.');
+                  },
+                  onError: function (err) {
+                    statusEl.textContent = 'خطأ';
+                    showToast('❌ خطأ: ' + err.message);
+                  },
+                };
+
+                window.Pi.createPayment(paymentData, callbacks);
+              } catch (e) {
+                statusEl.textContent = 'فشل';
+                showToast('❌ ' + e.message);
+              }
+            };
+          } catch (e) {
+            statusEl.textContent = 'فشل التحقق';
+            showToast('❌ فشل تسجيل الدخول: ' + e.message);
+          }
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initPiPayment);
+        } else {
+          initPiPayment();
+        }
+      })();
+    </script>
+
+    <!-- Mermaid already initialized in <head> -->
+  
+
+<div class="mermaidTooltip" style="opacity: 0; position: absolute; text-align: center; max-width: 200px; padding: 2px; font-size: 12px; background: rgb(255, 255, 222); border: 1px solid rgb(51, 51, 51); border-radius: 2px; pointer-events: none; z-index: 100;"></div></body></html>
