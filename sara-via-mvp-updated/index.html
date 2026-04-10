@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sara Via</title>
+  <meta name="description" content="Sara Via is a global luxury travel web app with AI concierge, multilingual support, dynamic destinations, booking, and Stripe-powered test payments." />
+  <meta name="theme-color" content="#081321" />
+  <meta property="og:title" content="Sara Via — Global Luxury Travel" />
+  <meta property="og:description" content="Luxury destination discovery, multilingual concierge, premium booking, and Stripe test checkout in one elegant MVP." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Sara Via — Global Luxury Travel" />
+  <meta name="twitter:description" content="Discover premium destinations, curated stays, AI concierge guidance, and secure payments." />
+  <link rel="preconnect" href="https://js.stripe.com" />
+  <link rel="dns-prefetch" href="https://js.stripe.com" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://js.stripe.com/v3/"></script>
+  <script src="config.js" defer></script>
+  <script src="utils.js" defer></script>
+  <script src="api.js" defer></script>
+  <script src="payments.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <noscript>
+    <div style="padding:16px;background:#081321;color:#fff;text-align:center;font-family:Arial,sans-serif;">Sara Via requires JavaScript enabled for search, concierge, booking, and payment features.</div>
+  </noscript>
+  <div class="bg-orb bg-orb-a"></div>
+  <div class="bg-orb bg-orb-b"></div>
+  <div class="bg-orb bg-orb-c"></div>
+
+  <div class="app-shell">
+    <header id="topbar" class="topbar"></header>
+
+    <main class="main-shell container">
+      <section id="heroSection" class="hero-section" aria-live="polite"></section>
+
+      <section class="content-grid">
+        <section id="bookingSection" class="glass-panel booking-panel" aria-live="polite"></section>
+        <section id="conciergeSection" class="glass-panel concierge-panel" aria-live="polite"></section>
+      </section>
+
+      <section id="dashboardSection" class="glass-panel dashboard-panel" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <div id="authModal" class="modal-root" aria-hidden="true"></div>
+  <div id="toastHost" class="toast-host" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
