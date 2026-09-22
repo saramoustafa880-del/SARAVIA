@@ -1,32 +1,16 @@
+const { bodyOf, handleError, httpError, json, methodGuard, piFetch, requiredString, assertSupportPayment } = require("./_pi");
+
 exports.handler = async (event) => {
   try {
-    const { paymentId } = JSON.parse(event.body);
-
-    const res = await fetch(`https://api.minepi.com/v2/payments/${paymentId}/approve`, {
-      method: "POST",
-      headers: {
-        Authorization: `Key ${process.env.PI_API_KEY}`
-      }
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      return {
-        statusCode: res.status,
-        body: JSON.stringify({ error: data })
-      };
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ success: true, data })
-    };
-
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+    methodGuard(event);
+    const paymentId = requiredString(bodyOf(event).paymentId, "paymentId", 200);
+    const payment = await piFetch("/payments/" + encodeURIComponent(paymentId));
+    const item = assertSupportPayment(payment);
+    if (item.cancelled || item.user_cancelled) throw httpError(409, "This payment was cancelled");
+    if (item.developer_completed) return json(200, { success: true, payment: item });
+    const approved = await piFetch("/payments/" + encodeURIComponent(paymentId) + "/approve", { method: "POST" });
+    return json(200, { success: true, payment: approved });
+  } catch (error) {
+    return handleError(error);
   }
 };

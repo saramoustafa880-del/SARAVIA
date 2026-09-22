@@ -1,0 +1,314 @@
+All instructions below are for **Pi Testnet only**, using your current live URL `https://saravia1.netlify.app/` and Netlify project `saraviatest`. Do not use Mainnet keys, Mainnet wallets, or your auction `.pi` domain on this site.
+
+Official SDK docs: [developers.minepi.com/docs](https://developers.minepi.com/docs)
+
+---
+
+## 1. Testnet project requirements
+
+Create a **separate** app in Developer Portal (Pi Browser):
+
+| Field | Value |
+|---|---|
+| App name | SARAVIA Testnet |
+| Network | **Pi Testnet** (cannot be changed later) |
+| Development URL | `http://localhost:8888` (or your local port) |
+| Production URL | `https://saravia1.netlify.app` |
+| Hosting | Netlify project `saraviatest` |
+| Git branch | `Testnet` |
+| Domain file | `validation-key.txt` at site root |
+
+Then:
+
+1. Generate the **Testnet API key**.
+2. Paste the portal validation key into `validation-key.txt` and verify the domain.
+3. Open the app in **Pi Browser**. A black/yellow bar means Testnet.
+
+Netlify env vars for `saraviatest` only:
+
+```text
+PI_NETWORK=testnet
+PI_API_KEY=<TESTNET_APP_API_KEY>
+PI_APP_ID=<TESTNET_APP_ID>
+PI_APP_WALLET_PRIVATE_SEED=<TESTNET_APP_WALLET_SEED>
+```
+
+Never commit these values to Git. Never reuse them on Mainnet.
+
+---
+
+## 2. Enable every Pi SDK feature you asked for
+
+Load the official SDK once, before any other Pi call:
+
+```html
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+<script>
+  Pi.init({ version: "2.0", sandbox: true });
+</script>
+```
+
+- `sandbox: true` on Testnet / desktop sandbox.
+- Features work inside **Pi Browser**. Desktop sandbox needs Developer Portal sandbox authorization.
+
+### Features to ship on Testnet
+
+1. **Pi Login** — `Pi.authenticate`
+2. **User-to-App payment (U2A)** — pioneer pays the app
+3. **App-to-User payment (A2U)** — one-time **Get Pi** from the Testnet app wallet to the pioneer
+4. **Incomplete payment recovery**
+5. **Server verification** of the access token
+
+---
+
+## 3. Login rules
+
+### Required scopes
+
+```javascript
+const SCOPES = ["username", "payments", "wallet_address"];
+```
+
+| Scope | Why |
+|---|---|
+| `username` | Show the pioneer username |
+| `payments` | Required for U2A and incomplete-payment handling |
+| `wallet_address` | Needed to send the one-time Get Pi A2U payment |
+
+### Login rules for SARAVIA Testnet
+
+- Login is **Pi only**. No email, password, Google, Apple, or Stripe login on this build.
+- First visit: show **Continue with Pi**.
+- Call `Pi.authenticate(SCOPES, onIncompletePaymentFound)` only after the user taps the button.
+- Send `accessToken` to your backend. Do not trust client-side `user` data alone.
+- Backend must call `GET https://api.minepi.com/v2/me` with header `Authorization: Bearer <accessToken>`.
+- Create the app session only if `/me` succeeds.
+- Store `uid`, `username`, and `wallet_address` in your database.
+- `uid` is per-app. If the user revokes permission, they get a new `uid`.
+- Logout only clears **your** session cookie/JWT. It does not disconnect Pi Network.
+- If the SDK is missing (`!window.Pi`), show: `Open this app in Pi Browser to sign in.`
+- After login, immediately run incomplete-payment recovery.
+
+### Login implementation
+
+```javascript
+async function piLogin() {
+  if (!window.Pi) {
+    throw new Error("Open SARAVIA in Pi Browser to sign in.");
+  }
+
+  const auth = await window.Pi.authenticate(
+    ["username", "payments", "wallet_address"],
+    onIncompletePaymentFound
+  );
+
+  const res = await fetch("/.netlify/functions/pi-me", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accessToken: auth.accessToken })
+  });
+
+  const session = await res.json();
+  if (!res.ok) throw new Error(session.error || "Login verification failed");
+  return session; // { uid, username, wallet_address }
+}
+
+function onIncompletePaymentFound(payment) {
+  fetch("/.netlify/functions/pi-complete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      paymentId: payment.identifier,
+      txid: payment.transaction && payment.transaction.txid
+    })
+  });
+}
+```
+
+Backend `/me` check:
+
+```text
+GET https://api.minepi.com/v2/me
+Authorization: Bearer <accessToken>
+```
+
+---
+
+## 4. Get Test-Pi into wallets
+
+Test-Pi has no real value and exists only on Testnet.
+
+**Pioneer wallet**
+1. Open Pi Wallet in Pi Browser.
+2. Switch to **Testnet**.
+3. Use the Testnet faucet / “Receive Test-Pi” action in the wallet.
+4. Confirm the pioneer has a Testnet balance before U2A tests.
+
+**App / developer wallet**
+1. Create or open the Testnet app wallet from Developer Portal / wallet.pi.
+2. Fund it with Test-Pi from the faucet.
+3. A2U **Get Pi** fails if the app wallet is empty.
+4. Keep the seed only in Netlify env `PI_APP_WALLET_PRIVATE_SEED`.
+
+On Testnet, the portal uses the developer’s most recently opened wallet as the project wallet until a dedicated app wallet is set.
+
+---
+
+## 5. One-time “Get Pi” (A2U)
+
+Purpose: send Test-Pi **once** from the SARAVIA Testnet app wallet to the logged-in pioneer.
+
+### Product rules
+
+- Button label: **Get Pi**
+- Amount: `0.1` Test-Pi (change if you want)
+- Memo: `SARAVIA Testnet welcome bonus`
+- Eligible only after successful Pi login
+- One claim per `uid`
+- If already claimed, disable the button: `Already claimed`
+- Credit the user only after Pi returns a completed A2U payment
+- Never expose the app wallet seed to the browser
+
+### Server flow
+
+1. Verify session from `/me`.
+2. Reject if `claims[uid]` already exists.
+3. Create A2U payment with Platform API:
+
+```text
+POST https://api.minepi.com/v2/payments
+Authorization: Key <PI_API_KEY>
+Content-Type: application/json
+```
+
+```json
+{
+  "amount": 0.1,
+  "memo": "SARAVIA Testnet welcome bonus",
+  "metadata": { "type": "welcome_bonus", "once": true },
+  "uid": "<pioneer_uid>"
+}
+```
+
+4. Submit the payment with the app wallet seed on the server (never in frontend).
+5. Complete the payment with the blockchain `txid`.
+6. Mark `uid` as claimed so it cannot run again.
+
+Frontend only calls your function:
+
+```javascript
+async function claimGetPi() {
+  const res = await fetch("/.netlify/functions/pi-get-pi", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accessToken })
+  });
+  return res.json();
+}
+```
+
+Suggested Netlify function: `netlify/functions/pi-get-pi.js`.
+
+Persist claims in a store you control (Supabase, Fauna, or a locked JSON/DB). Memory-only storage resets on each deploy and would allow a second claim.
+
+---
+
+## 6. User-to-App payments (U2A)
+
+Use this for bookings, support, or feature unlocks on Testnet.
+
+```javascript
+function payApp(amount, memo, metadata) {
+  return window.Pi.createPayment(
+    { amount, memo, metadata },
+    {
+      onReadyForServerApproval: async (paymentId) => {
+        await fetch("/.netlify/functions/pi-approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId })
+        });
+      },
+      onReadyForServerCompletion: async (paymentId, txid) => {
+        await fetch("/.netlify/functions/pi-complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId, txid })
+        });
+      },
+      onCancel: (paymentId) => console.log("canceled", paymentId),
+      onError: (error, payment) => console.error(error, payment)
+    }
+  );
+}
+```
+
+Backend:
+
+```text
+POST https://api.minepi.com/v2/payments/{paymentId}/approve
+Authorization: Key <PI_API_KEY>
+
+POST https://api.minepi.com/v2/payments/{paymentId}/complete
+Authorization: Key <PI_API_KEY>
+{ "txid": "<txid>" }
+```
+
+You already have `pi-approve.js` and `pi-complete.js`. Keep them reading `process.env.PI_API_KEY` only.
+
+Unlock the booked feature only after `/complete` returns success.
+
+Example first Testnet payment: amount `0.1`, memo `SARAVIA Testnet support`.
+
+---
+
+## 7. Backend functions required on Testnet
+
+| Function | Role |
+|---|---|
+| `pi-me` | Verify access token, return uid/username/wallet |
+| `pi-approve` | Approve U2A payment |
+| `pi-complete` | Complete U2A payment |
+| `pi-cancel` | Cancel / mark cancelled payments |
+| `pi-get-pi` | One-time A2U Get Pi + claim lock |
+
+Every function must:
+
+- Use `Authorization: Key ${process.env.PI_API_KEY}`
+- Check `process.env.PI_NETWORK === "testnet"`
+- Refuse to run if the API key is missing
+- Never return the wallet seed
+
+---
+
+## 8. Testnet acceptance checklist
+
+Do all of this in Pi Browser on `https://saravia1.netlify.app`:
+
+1. Black/yellow Testnet bar is visible.
+2. Without Pi Browser, login shows the open-in-Pi-Browser message.
+3. **Continue with Pi** requests `username`, `payments`, `wallet_address`.
+4. Backend `/me` verifies the token.
+5. Username appears in the header.
+6. Pioneer Testnet wallet has Test-Pi from the faucet.
+7. App Testnet wallet has Test-Pi from the faucet.
+8. **Get Pi** sends `0.1` Test-Pi to the pioneer once.
+9. Second tap on **Get Pi** is rejected.
+10. U2A payment of `0.1` approves and completes.
+11. Incomplete payment is recovered on next login.
+12. Cancelled payment does not unlock a feature.
+13. No Mainnet key is present in this Netlify site.
+14. No Stripe / email login is used on this Testnet build.
+
+---
+
+## 9. What not to do on Testnet
+
+- Do not point this URL at a Mainnet Developer Portal app.
+- Do not put Mainnet `PI_API_KEY` on `saraviatest`.
+- Do not treat Test-Pi as real Pi.
+- Do not send Get Pi from the browser with the app seed.
+- Do not allow a second Get Pi for the same `uid`.
+- Do not merge to Mainnet until every item in section 8 passes.
+
+After this Testnet build is green, promote features with a pull request `Testnet` → `main` and a **different** URL, app, and API key for Mainnet.

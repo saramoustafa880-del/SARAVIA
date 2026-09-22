@@ -1,0 +1,11 @@
+{
+  "name": "saravia-testnet",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SARAVIA Pi Testnet app for the saraviatest Netlify site",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@netlify/blobs": "latest",
+    "pi-backend": "latest"
+  }
+}
