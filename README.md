@@ -1,6 +1,6 @@
 # SARAVIA Testnet
 
-This branch is the Pi Testnet build for https://saravia1.netlify.app on the Netlify site saraviatest. It is intentionally isolated from Mainnet.
+This branch is the Pi Testnet build for https://saravia2.netlify.app on the Netlify site saravia2. It is intentionally isolated from Mainnet.
 
 ## Deployment contract
 
@@ -11,11 +11,11 @@ This branch is the Pi Testnet build for https://saravia1.netlify.app on the Netl
 - **Pi SDK:** https://sdk.minepi.com/pi-sdk.js, initialized with sandbox: true
 - **Network guard:** every server function requires PI_NETWORK=testnet
 
-Create a separate Pi Developer Portal app named SARAVIA Testnet on Pi Testnet. Set its production URL to https://saravia1.netlify.app and place the portal validation value in public/validation-key.txt. Do not reuse a Mainnet app, wallet, API key, or domain for this site.
+Create a separate Pi Developer Portal app named SARAVIA Testnet on Pi Testnet. Set its production URL to https://saravia2.netlify.app and place the portal validation value in public/validation-key.txt. Do not reuse a Mainnet app, wallet, API key, or domain for this site.
 
 ## Netlify environment
 
-Set these variables on saraviatest only. Never commit their values:
+Set these variables on saravia2 only. Never commit their values:
 
 PI_NETWORK=testnet
 PI_API_KEY=<TESTNET_APP_API_KEY>
@@ -43,7 +43,7 @@ The wallet seed is used only inside pi-get-pi.js; it is never returned to the br
 5. Get Pi succeeds once; a second attempt is rejected.
 6. Support approval and completion unlock the supporter mark only after Pi confirms completion.
 7. An incomplete payment is recovered or cancelled on the next login.
-8. No Mainnet key or wallet is present in the saraviatest environment.
+8. No Mainnet key or wallet is present in the saravia2 environment.
 9. This build contains no email, Google, Apple, or Stripe login.
 
 Do not merge this branch into Mainnet until the Testnet checklist passes. Mainnet requires a separate URL, Developer Portal app, wallet, API key, and sandbox: false build.
