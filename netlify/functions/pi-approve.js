@@ -1,11 +1,34 @@
+
 exports.handler = async (event) => {
+  if (event.httpMethod && event.httpMethod !== "POST") {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: "Method Not Allowed" })
+    };
+  }
+
   try {
+    if (!event.body) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Missing request body" })
+      };
+    }
+
     const { paymentId } = JSON.parse(event.body);
+
+    if (!paymentId) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Missing paymentId parameter" })
+      };
+    }
 
     const res = await fetch(`https://api.minepi.com/v2/payments/${paymentId}/approve`, {
       method: "POST",
       headers: {
-        Authorization: `Key ${process.env.PI_API_KEY}`
+        "Authorization": `Key ${process.env.PI_API_KEY}`,
+        "Content-Type": "application/json"
       }
     });
 
