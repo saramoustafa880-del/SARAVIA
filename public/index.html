@@ -18,14 +18,12 @@
 </head>
 <body>
   <div class="container">
-    <!-- Header -->
     <header>
       <div class="brand-badge">Official Pi Network Mainnet Application</div>
       <h1>SARAVIA <span>GLOBAL</span></h1>
       <p class="tagline">Decentralized luxury travel, private aviation, executive stays, and secure cargo logistics powered entirely by Pi.</p>
     </header>
 
-    <!-- Pioneer Authentication & Support Panel -->
     <section class="session-panel">
       <div class="session-info" id="session-text">
         Connect your Pi account to access VIP reservations, flights, and logistics.
@@ -33,11 +31,15 @@
       <div class="button-group">
         <button id="btn-login" class="btn" type="button">Connect with Pi</button>
         <button id="btn-support" class="btn" type="button" style="display: none;">Send 0.1 π Support</button>
+        <button id="btn-open-receipts" class="btn btn-secondary" type="button">My Bookings</button>
         <button id="btn-open-partner-modal" class="btn btn-secondary" type="button">+ List Your Service</button>
       </div>
     </section>
 
-    <!-- Category Tabs -->
+    <div class="search-wrapper">
+      <input type="text" id="search-input" class="search-input" placeholder="Search by city, airline, hotel, or logistics...">
+    </div>
+
     <nav class="tabs-container">
       <button class="tab-btn active" data-filter="all">All Services</button>
       <button class="tab-btn" data-filter="stays">🏨 Hotels & Resorts</button>
@@ -45,12 +47,10 @@
       <button class="tab-btn" data-filter="logistics">🚚 Logistics & VIP Fleet</button>
     </nav>
 
-    <!-- Dynamic Services Catalog -->
     <main>
       <section id="services-catalog" class="service-grid"></section>
     </main>
 
-    <!-- Partner Merchant Section -->
     <section class="partner-section">
       <h2>Partner with SARAVIA Ecosystem</h2>
       <p>Are you a hotel operator, airline charter, private jet broker, or logistics enterprise? Offer your services to millions of verified Pioneers worldwide.</p>
@@ -60,12 +60,11 @@
     </section>
   </div>
 
-  <!-- Partner Listing Modal -->
   <div id="partner-modal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
         <h3>List Your Service</h3>
-        <button id="btn-close-modal" class="close-modal">&times;</button>
+        <button class="close-modal" onclick="document.getElementById('partner-modal').style.display='none'">&times;</button>
       </div>
       <form id="partner-form">
         <div class="form-group">
@@ -99,7 +98,16 @@
     </div>
   </div>
 
-  <!-- Notification Toast -->
+  <div id="receipts-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>My Bookings & Receipts</h3>
+        <button id="btn-close-receipts" class="close-modal">&times;</button>
+      </div>
+      <div id="receipts-list" class="receipts-box"></div>
+    </div>
+  </div>
+
   <div id="status-toast"></div>
 
   <script src="./app.js"></script>

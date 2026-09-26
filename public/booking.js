@@ -1,5 +1,4 @@
 (function () {
-  // Built-in Luxury Directory
   const DEFAULT_SERVICES = [
     {
       id: "dubai-resort",
@@ -8,7 +7,7 @@
       location: "Dubai, United Arab Emirates",
       description: "Ultra-luxury penthouse suite with private sea terrace, 24/7 concierge, and airport limousine transfer.",
       deposit: 0.1,
-      badge: "5-Star Stay"
+      badge: "5-Star Palace"
     },
     {
       id: "paris-suite",
@@ -17,7 +16,16 @@
       location: "Paris, France",
       description: "Historic Seine-view apartments with private sommelier service and priority museum access.",
       deposit: 0.1,
-      badge: "Palace Hotel"
+      badge: "Signature Collection"
+    },
+    {
+      id: "tokyo-skyline",
+      category: "stays",
+      title: "Shinjuku Skyline Retreat",
+      location: "Tokyo, Japan",
+      description: "Panoramic executive suite with private tea master experience and station meet-and-greet.",
+      deposit: 0.1,
+      badge: "VIP Stay"
     },
     {
       id: "jet-charter",
@@ -26,23 +34,23 @@
       location: "Transcontinental (London - Dubai - Tokyo)",
       description: "Private jet booking deposit. Exclusive private terminal clearance, chef catering, and instant dispatch.",
       deposit: 0.1,
-      badge: "Private Aviation"
+      badge: "Private Jet"
     },
     {
       id: "first-class-sky",
       category: "flights",
       title: "First Class Sky Suites",
       location: "Global Commercial Airlines",
-      description: "First-class cabin ticket reservation deposit with flatbed suites and VIP tarmac transport.",
+      description: "First-class cabin reservation deposit with private flatbed suites and VIP tarmac transport.",
       deposit: 0.1,
-      badge: "Airlines"
+      badge: "Aviation"
     },
     {
       id: "armored-fleet",
       category: "logistics",
       title: "Armored VIP Executive Transport",
-      location: "Metropolitan Hubs Worldwide",
-      description: "B6 level executive armored Mercedes Maybach fleet with certified close protection security drivers.",
+      location: "Global Metropolitan Hubs",
+      description: "B6 level executive armored Mercedes Maybach fleet with certified close protection drivers.",
       deposit: 0.1,
       badge: "VIP Fleet"
     },
@@ -50,8 +58,8 @@
       id: "express-cargo",
       category: "logistics",
       title: "Pi Express Air Freight & Logistics",
-      location: "Global Freight Network",
-      description: "Secure priority logistics deposit for high-value goods, artwork, and express diplomatic courier transport.",
+      location: "Worldwide Freight Corridors",
+      description: "Secure priority logistics deposit for high-value assets, artwork, and express courier freight.",
       deposit: 0.1,
       badge: "Global Logistics"
     }
@@ -70,19 +78,34 @@
     return [...DEFAULT_SERVICES, ...getStoredListings()];
   }
 
-  function renderServices(filter = "all") {
+  let currentCategory = "all";
+  let currentSearch = "";
+
+  function renderServices() {
     const grid = document.getElementById("services-catalog");
     if (!grid) return;
 
-    const all = getAllServices();
-    const filtered = filter === "all" ? all : all.filter(item => item.category === filter);
+    let items = getAllServices();
 
-    if (filtered.length === 0) {
-      grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: var(--text-muted); padding: 2rem;">No listings found in this category.</p>';
+    if (currentCategory !== "all") {
+      items = items.filter(s => s.category === currentCategory);
+    }
+
+    if (currentSearch.trim() !== "") {
+      const query = currentSearch.toLowerCase();
+      items = items.filter(s =>
+        s.title.toLowerCase().includes(query) ||
+        s.location.toLowerCase().includes(query) ||
+        s.description.toLowerCase().includes(query)
+      );
+    }
+
+    if (items.length === 0) {
+      grid.innerHTML = '<p style="text-align:center; grid-column: 1/-1; color: var(--text-muted); padding: 3rem;">No services found matching your criteria.</p>';
       return;
     }
 
-    grid.innerHTML = filtered.map(item => `
+    grid.innerHTML = items.map(item => `
       <article class="service-card" data-category="${item.category}">
         <div class="card-header">
           <span class="card-category">${item.category}</span>
@@ -121,18 +144,25 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    renderServices("all");
+    renderServices();
 
-    // Filter Tabs
     document.querySelectorAll(".tab-btn").forEach(tab => {
       tab.addEventListener("click", (e) => {
         document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
         e.target.classList.add("active");
-        renderServices(e.target.getAttribute("data-filter"));
+        currentCategory = e.target.getAttribute("data-filter");
+        renderServices();
       });
     });
 
-    // Delegation for reservation buttons
+    const searchInput = document.getElementById("search-input");
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        currentSearch = e.target.value;
+        renderServices();
+      });
+    }
+
     const catalog = document.getElementById("services-catalog");
     if (catalog) {
       catalog.addEventListener("click", (e) => {
@@ -146,7 +176,6 @@
       });
     }
 
-    // Partner Submission Form
     const partnerForm = document.getElementById("partner-form");
     if (partnerForm) {
       partnerForm.addEventListener("submit", (e) => {
@@ -165,21 +194,14 @@
         existing.unshift(newListing);
         localStorage.setItem("saravia_partner_listings", JSON.stringify(existing));
 
-        // Re-render
-        renderServices("all");
-        document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
-        document.querySelector('.tab-btn[data-filter="all"]')?.classList.add("active");
-
-        // Close modal
+        renderServices();
         document.getElementById("partner-modal").style.display = "none";
         partnerForm.reset();
 
         if (window.saraviaToast) {
-          window.saraviaToast("Your service has been listed successfully!", "success");
+          window.saraviaToast("Listing published to SARAVIA catalog!", "success");
         }
       });
     }
   });
-
-  window.saraviaReloadCatalog = () => renderServices("all");
 })();

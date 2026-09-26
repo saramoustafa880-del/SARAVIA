@@ -14,10 +14,45 @@ function showToast(message, type = "info") {
   }, 5000);
 }
 
+function saveReceipt(receipt) {
+  try {
+    const list = JSON.parse(localStorage.getItem("saravia_receipts") || "[]");
+    list.unshift(receipt);
+    localStorage.setItem("saravia_receipts", JSON.stringify(list));
+    renderReceipts();
+  } catch (e) {
+    console.warn("Storage warning:", e);
+  }
+}
+
+function renderReceipts() {
+  const container = document.getElementById("receipts-list");
+  if (!container) return;
+  const receipts = JSON.parse(localStorage.getItem("saravia_receipts") || "[]");
+
+  if (receipts.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:1.5rem;">No transaction receipts yet.</p>';
+    return;
+  }
+
+  container.innerHTML = receipts.map(r => `
+    <div class="receipt-item">
+      <div class="receipt-header">
+        <span class="receipt-title">${r.memo}</span>
+        <span class="receipt-amount">${r.amount} π</span>
+      </div>
+      <div class="receipt-meta">
+        <span>TxID: <code>${r.txid ? r.txid.substring(0, 16) + '...' : 'Verified on Ledger'}</code></span>
+        <span>${new Date(r.timestamp).toLocaleDateString()} ${new Date(r.timestamp).toLocaleTimeString()}</span>
+      </div>
+    </div>
+  `).join("");
+}
+
 async function authenticatePioneer() {
   try {
     if (!window.Pi) {
-      throw new Error("Pi SDK is loading or not available. Please open inside Pi Browser.");
+      throw new Error("Pi SDK is not loaded. Please open inside Pi Browser.");
     }
     showToast("Connecting to Pi Mainnet...", "info");
     const authResult = await window.Pi.authenticate(SCOPES, onIncompletePayment);
@@ -25,7 +60,7 @@ async function authenticatePioneer() {
 
     const sessionInfo = document.getElementById("session-text");
     if (sessionInfo) {
-      sessionInfo.innerHTML = `Welcome, <strong>@${activePioneer.username}</strong> · Pi Mainnet Connected`;
+      sessionInfo.innerHTML = `Connected Pioneer: <strong>@${activePioneer.username}</strong> · Pi Mainnet Verified`;
     }
 
     document.getElementById("btn-login").style.display = "none";
@@ -33,7 +68,7 @@ async function authenticatePioneer() {
 
     showToast(`Authenticated as @${activePioneer.username}`, "success");
   } catch (err) {
-    console.error("Authentication error:", err);
+    console.error("Auth error:", err);
     showToast(err.message || "Pi authentication failed.", "error");
   }
 }
@@ -54,61 +89,60 @@ async function payWithPi(amount, memo, metadata = {}) {
 
     const callbacks = {
       onReadyForServerApproval: function (paymentId) {
-        showToast(`Payment registered (${paymentId.substring(0, 8)}...). Awaiting server sign...`, "info");
+        showToast("Payment awaiting server approval...", "info");
         fetch("/.netlify/functions/approve", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ paymentId: paymentId })
-        }).catch(err => console.warn("Approval webhook error:", err));
+        }).catch(err => console.warn("Approval notification error:", err));
       },
       onReadyForServerCompletion: function (paymentId, txid) {
-        showToast("Broadcasting transaction to Pi Mainnet...", "info");
+        showToast("Broadcasting to Pi Blockchain Ledger...", "info");
         fetch("/.netlify/functions/complete", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ paymentId: paymentId, txid: txid })
         }).then(() => {
-          showToast(`Transaction of ${amount} π confirmed on Pi Ledger!`, "success");
+          showToast(`Transaction of ${amount} π completed successfully!`, "success");
+          saveReceipt({ paymentId, txid, amount, memo, timestamp: Date.now() });
         }).catch(() => {
-          showToast(`Transaction broadcasted: ${txid.substring(0, 12)}...`, "success");
+          showToast(`Transaction broadcasted: ${txid.substring(0, 10)}...`, "success");
+          saveReceipt({ paymentId, txid, amount, memo, timestamp: Date.now() });
         });
       },
-      onCancel: function (paymentId) {
-        showToast("Payment was cancelled by Pioneer.", "error");
+      onCancel: function () {
+        showToast("Payment cancelled by Pioneer.", "error");
       },
-      onError: function (error, payment) {
+      onError: function (error) {
         console.error("Payment error:", error);
-        showToast(error.message || "Payment encounter an issue.", "error");
+        showToast(error.message || "Payment encountered an error.", "error");
       }
     };
 
     await window.Pi.createPayment(paymentData, callbacks);
   } catch (err) {
-    console.error("Payment error:", err);
-    showToast(err.message || "Transaction failed to initiate.", "error");
+    showToast(err.message || "Payment request failed.", "error");
     throw err;
   }
 }
 
 function onIncompletePayment(payment) {
-  console.log("Incomplete payment detected:", payment);
   fetch("/.netlify/functions/incomplete", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ payment: payment })
-  }).catch(err => console.warn(err));
+  }).catch(e => console.warn(e));
 }
 
-// Global exposure
 window.saraviaPay = payWithPi;
 window.saraviaToast = showToast;
 
 document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("btn-login");
   const supportBtn = document.getElementById("btn-support");
-  const partnerModal = document.getElementById("partner-modal");
-  const openModalBtn = document.getElementById("btn-open-partner-modal");
-  const closeModalBtn = document.getElementById("btn-close-modal");
+  const receiptsBtn = document.getElementById("btn-open-receipts");
+  const receiptsModal = document.getElementById("receipts-modal");
+  const closeReceiptsBtn = document.getElementById("btn-close-receipts");
 
   if (loginBtn) loginBtn.addEventListener("click", authenticatePioneer);
   if (supportBtn) {
@@ -117,14 +151,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Modal Controls
-  if (openModalBtn && partnerModal) {
-    openModalBtn.addEventListener("click", () => partnerModal.style.display = "flex");
+  if (receiptsBtn && receiptsModal) {
+    receiptsBtn.addEventListener("click", () => {
+      renderReceipts();
+      receiptsModal.style.display = "flex";
+    });
   }
-  if (closeModalBtn && partnerModal) {
-    closeModalBtn.addEventListener("click", () => partnerModal.style.display = "none");
+  if (closeReceiptsBtn && receiptsModal) {
+    closeReceiptsBtn.addEventListener("click", () => receiptsModal.style.display = "none");
   }
   window.addEventListener("click", (e) => {
-    if (e.target === partnerModal) partnerModal.style.display = "none";
+    if (e.target === receiptsModal) receiptsModal.style.display = "none";
   });
 });
