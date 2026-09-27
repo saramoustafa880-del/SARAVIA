@@ -1,40 +1,121 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#17130f">
-    <meta name="description" content="SARAVIA on Pi Testnet: Pi login, a one-time Test-Pi welcome, and Testnet support payments.">
-    <title>SARAVIA · Pi Testnet</title>
-    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,560;9..144,680&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css">
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <script>
-      try { if (window.Pi) window.Pi.init({ version: "2.0", sandbox: true }); } catch (error) { console.warn("Pi.init failed", error); }
-    </script>
-  </head>
-  <body>
-    <div class="testnet-bar"><span class="signal"></span> PI TESTNET <span class="bar-note">Test-Pi has no real value</span></div>
-    <main class="shell">
-      <header class="masthead">
-        <div><p class="eyebrow">SARAVIA / FIELD DESK</p><p class="wordmark">SARAVIA</p></div>
-        <div class="identity"><span id="pioneer-name">Not signed in</span><button id="logout" class="text-button" type="button" hidden>Log out</button></div>
-      </header>
-      <section class="hero">
-        <div class="hero-copy"><p class="eyebrow">A small testnet ritual</p><h1>One sign-in.<br><em>One welcome.</em></h1><p class="lede">SARAVIA talks to Pi Testnet only. Sign in with Pi, receive one 0.1 Test-Pi welcome from the app wallet, or send 0.1 Test-Pi as support.</p></div>
-        <div class="hero-action"><div class="orb"><span>π</span></div><button id="login" class="button button-primary" type="button">Continue with Pi <span>↗</span></button><p id="browser-note" class="browser-note" hidden>Open this app in Pi Browser to sign in.</p></div>
-      </section>
-      <section class="cards" aria-label="Testnet actions">
-        <article class="card welcome-card"><div class="card-top"><span class="index">01</span><span class="tag">APP → PIONEER</span></div><h2>Get Pi</h2><p>A single 0.1 Test-Pi welcome from the SARAVIA Testnet app wallet.</p><button id="get-pi" class="button" type="button" disabled>Get Pi <span>↗</span></button></article>
-        <article class="card support-card"><div class="card-top"><span class="index">02</span><span class="tag">PIONEER → APP</span></div><h2>Support</h2><p>Send 0.1 Test-Pi to the app. The supporter mark appears only after completion.</p><button id="support" class="button" type="button" disabled>Send 0.1 support <span>↗</span></button><p id="supporter" class="success-mark" hidden>✓ Supporter confirmed</p></article>
-      </section>
-      <section class="session card"><div class="card-top"><span class="index">SESSION</span><span class="tag">VERIFIED BY PI</span></div><div class="session-grid"><div><span>Username</span><strong id="d-user">—</strong></div><div><span>Wallet</span><strong id="d-wallet">—</strong></div><div><span>Welcome</span><strong id="d-claim">Not claimed</strong></div><div><span>Support</span><strong id="d-support">Locked</strong></div></div></section>
-      <div class="notice-row"><p id="status" class="status" role="status" aria-live="polite"></p><button id="cancel-incomplete" class="text-button" type="button" hidden>Cancel unfinished payment</button></div>
-      <footer><span>SARAVIA TESTNET</span><span>Use Pi Browser · Black / yellow means Testnet</span></footer>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SARAVIA · Pi Testnet Travel, Tours, Aviation & Logistics</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <script>
+    try {
+      if (window.Pi) {
+        // Explicitly set to sandbox: true for Pi Testnet
+        window.Pi.init({ version: "2.0", sandbox: true });
+      }
+    } catch (e) {
+      console.warn("Pi Testnet SDK init notice:", e);
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="testnet-badge">PI TESTNET SANDBOX ECOSYSTEM</div>
+      <h1>SARAVIA <span>GLOBAL</span></h1>
+      <p class="tagline">Testnet environment for luxury stays, airline reservations, curated tours, and VIP logistics powered by Test-Pi.</p>
+    </header>
+
+    <section class="session-panel">
+      <div class="session-info" id="session-text">
+        Connect your Pi account to test bookings and simulated payments using Test-Pi.
+      </div>
+      <div class="button-group">
+        <button id="btn-login" class="btn" type="button">Connect with Pi (Testnet)</button>
+        <button id="btn-support" class="btn" type="button" style="display: none;">Send 0.1 Test-π Support</button>
+        <button id="btn-open-receipts" class="btn btn-secondary" type="button">My Bookings</button>
+        <button id="btn-open-partner-modal" class="btn btn-secondary" type="button">+ List Your Service</button>
+      </div>
+    </section>
+
+    <div class="search-wrapper">
+      <input type="text" id="search-input" class="search-input" placeholder="Search stays, airlines, desert safaris, tours, or logistics...">
+    </div>
+
+    <nav class="tabs-container">
+      <button class="tab-btn active" data-filter="all">All Services</button>
+      <button class="tab-btn" data-filter="stays">🏨 Hotels & Resorts</button>
+      <button class="tab-btn" data-filter="flights">✈️ Aviation & Flights</button>
+      <button class="tab-btn" data-filter="tours">🗺️ Curated Tours & Safaris</button>
+      <button class="tab-btn" data-filter="logistics">🚚 Logistics & VIP Fleet</button>
+    </nav>
+
+    <main>
+      <section id="services-catalog" class="service-grid"></section>
     </main>
-    <script type="module" src="./app.js"></script>
-  </body>
+
+    <section class="partner-section">
+      <h2>Partner with SARAVIA Testnet Ecosystem</h2>
+      <p>Simulate listing your hotel, airline charter, tour package, or transport fleet on the Pi Network developer sandbox.</p>
+      <button class="btn btn-purple" onclick="document.getElementById('partner-modal').style.display='flex'">
+        Submit Merchant Listing
+      </button>
+    </section>
+  </div>
+
+  <!-- Partner Listing Modal -->
+  <div id="partner-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>List Your Service (Testnet)</h3>
+        <button class="close-modal" onclick="document.getElementById('partner-modal').style.display='none'">&times;</button>
+      </div>
+      <form id="partner-form">
+        <div class="form-group">
+          <label for="p-category">Service Category</label>
+          <select id="p-category" class="form-control" required>
+            <option value="stays">Hotel / Luxury Stay</option>
+            <option value="flights">Aviation / Airline Flight</option>
+            <option value="tours">Curated Tour / Excursion</option>
+            <option value="logistics">Logistics / VIP Transport</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="p-title">Service / Business Name</label>
+          <input type="text" id="p-title" class="form-control" placeholder="e.g. Royal Desert Excursions" required>
+        </div>
+        <div class="form-group">
+          <label for="p-location">Location / Coverage Area</label>
+          <input type="text" id="p-location" class="form-control" placeholder="e.g. Dubai - Abu Dhabi" required>
+        </div>
+        <div class="form-group">
+          <label for="p-deposit">Booking Deposit (Test-π)</label>
+          <input type="number" step="0.01" min="0.01" id="p-deposit" class="form-control" value="0.1" required>
+        </div>
+        <div class="form-group">
+          <label for="p-desc">Service Description</label>
+          <textarea id="p-desc" class="form-control" rows="3" placeholder="Describe package, itinerary details, vehicle specifications..." required></textarea>
+        </div>
+        <button type="submit" class="btn" style="width: 100%; justify-content: center; margin-top: 0.5rem;">
+          Publish Listing Instantly
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Receipts Modal -->
+  <div id="receipts-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>My Testnet Bookings & Receipts</h3>
+        <button id="btn-close-receipts" class="close-modal">&times;</button>
+      </div>
+      <div id="receipts-list" class="receipts-box"></div>
+    </div>
+  </div>
+
+  <div id="status-toast"></div>
+
+  <script src="./app.js"></script>
+  <script src="./booking.js"></script>
+</body>
 </html>
