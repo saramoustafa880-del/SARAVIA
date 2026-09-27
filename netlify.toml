@@ -1,10 +1,15 @@
 [build]
-  command = "npm install --omit=dev"
   publish = "public"
   functions = "netlify/functions"
 
-[build.environment]
-  NODE_VERSION = "20"
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
 
-[functions]
-  node_bundler = "esbuild"
+[[headers]]
+  for = "/validation-key.txt"
+  [headers.values]
+    Content-Type = "text/plain; charset=UTF-8"
